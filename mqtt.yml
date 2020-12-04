@@ -1,0 +1,33 @@
+#     - SERVICE : nom du service
+#     - DATA_LOCATION : localisation des données
+#     - NDD : lien du nom de domaine
+version: "2"
+services:
+  mosquitto:
+    image: eclipse-mosquitto:openssl
+    container_name: $SERVICE
+    restart: always
+    volumes:
+      - $DATA_LOCATION/mqtt-data:/data
+    ports:
+      - 1883:1883
+      - 9001:9001
+      
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.http.routers.$SERVICE-secure.tls.certresolver=http"
+      - "traefik.docker.network=proxy"
+  
+networks:
+  proxy:
+    external:
+      name: proxy
