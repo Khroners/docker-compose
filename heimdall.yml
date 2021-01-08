@@ -1,0 +1,37 @@
+# Fonctionne avec Portainer
+# Différentes variables sont à déclarer : 
+#     - SERVICE (nom du service, ici heimdall)
+#     - NDD (khroners.fr)
+#     - DATALOCATION (/apps/nom_du_service)
+version: "2.1"
+services:
+  heimdall:
+    image: ghcr.io/linuxserver/heimdall
+    container_name: $SERVICE
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - $DATALOCATION/heimdall-data:/config
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.http.routers.$SERVICE-secure.tls.certresolver=http"
+      - "traefik.docker.network=proxy"
+  
+networks:
+  proxy:
+    external:
+      name: proxy
+    
