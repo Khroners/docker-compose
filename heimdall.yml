@@ -3,7 +3,8 @@
 #     - SERVICE (nom du service, ici heimdall)
 #     - NDD (khroners.fr)
 #     - DATALOCATION (/apps/nom_du_service)
-version: "2.1"
+---
+version: "2"
 services:
   heimdall:
     image: ghcr.io/linuxserver/heimdall
@@ -13,8 +14,7 @@ services:
     volumes:
       - $DATALOCATION/heimdall-data:/config
     ports:
-      - 80:80
-      - 443:443
+      - 3012:3012
     restart: always
     networks:
       - proxy
@@ -34,4 +34,5 @@ networks:
   proxy:
     external:
       name: proxy
+    
     
