@@ -1,0 +1,29 @@
+http:
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: https
+    default-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+    secured:
+      chain:
+        middlewares:
+        - default-headers
+tls:
+  certificates:
+    - certFile: "/certs/fullchain.pem" #chemin du certificat
+      keyfile: "/certs/privkey.pem" #chemin de la clé privée
+      stores:
+        - default
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "path/to/cert.crt"
+        keyFile: "path/to/cert.key"
