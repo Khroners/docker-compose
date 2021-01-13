@@ -1,0 +1,42 @@
+# A DECLARE
+# SERVICE
+# DATA : lieu de stockage des données
+# DATA_LOCATION
+# NDD
+
+version: "2"
+services:
+  wikijs:
+    image: ghcr.io/linuxserver/wikijs
+    container_name: $SERVICE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - $DATA_LOCATION/config:/config
+      - $DATA:/data
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    
+    # Facultatif
+    networks:
+      - proxy
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+      
+
+networks:
+  proxy:
+    external:
+      name: proxy
