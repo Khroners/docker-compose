@@ -4,7 +4,7 @@
 #     - NDD : lien du nom de domaine
 
 #Il faut créer le fichier granana.ini (/etc/grafana/grafani.ini) dans le conteneur. Ici, dans $DATA_LOCATION/config sur l'hôte
-
+#Les logins par défaut : admin / admin
 
 version: "2"
 services:
