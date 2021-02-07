@@ -1,13 +1,15 @@
-# Variables d'environnement à déclarer :
-#     - SERVICE : nom du service (exemple : plex)
-#     - DATA_LOCATION : localisation des données (exemple /apps/"service")
-#     - NDD : lien du nom de domaine (exemple : papamica.fr)
+# Variables à déclarer :
+#     - SERVICE : nom du service
+#     - DATA_LOCATION : localisation des données
+#     - NDD : lien du nom de domaine
 
-# Fonctionne avec Portainer
+#Il faut créer le fichier granana.ini (/etc/grafana/grafani.ini) dans le conteneur. Ici, dans $DATA_LOCATION/config sur l'hôte
+
+
 version: "2"
 services:
-  grafana-xxl:  #optional more functional and creative UI
-    image: monitoringartist/grafana-xxl:7.1
+  grafana-xxl:  #image grafana avec tous les plugins
+    image: monitoringartist/grafana-xxl:7.3
     restart: always
     container_name: $SERVICE
     volumes: 
@@ -17,6 +19,7 @@ services:
 #      - GF_PATHS_DATA=/config/data
 #      - GF_PATHS_LOGS=/config/logs
 #      - GF_PATHS_PLUGINS=/config/plugins
+#      - GF_SERVER_ROOT_URL=https://monitoring.home.khroners.fr"
 #      - UPGRADEALL=false
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
       - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,alexanderzobnin-zabbix-app
@@ -27,7 +30,7 @@ services:
     # Facultatif  
     networks:
       - proxy
-    labels:
+    labels: #il faut décommenter une ligne pour un certificat. Ici le certificat est importer dans traefik (wildcard)
       - "traefik.enable=true"
       - "traefik.http.routers.$SERVICE.entrypoints=http"
       - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
@@ -36,11 +39,10 @@ services:
       - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
       - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
       - "traefik.http.routers.$SERVICE-secure.tls=true"
+#      - "traefik.http.routers.$SERVICE-secure.tls.certresolver=http"
       - "traefik.http.services.$SERVICE-secure.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
-
-
-      
+     
 networks:
   proxy:
     external:
