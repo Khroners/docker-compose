@@ -1,0 +1,34 @@
+version: "2.1"
+services:
+  mariadb:
+    image: ghcr.io/linuxserver/mariadb
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ROOT_PASSWORD=password
+      - TZ=Europe/Paris
+      - MYSQL_DATABASE=papermerge
+      - MYSQL_USER=papermerge
+      - MYSQL_PASSWORD=papermerge
+    volumes:
+      - /apps/papermerge-db/config:/config
+    ports:
+      - 3306:3306
+    restart: unless-stopped
+
+  papermerge:
+    image: ghcr.io/linuxserver/papermerge
+    container_name: papermerge
+    environment:
+      - TZ=Europe/Paris
+      - PUID=1000
+      - PGID=1000
+      - DOCKER_MODS=linuxserver/mods:papermerge-multilangocr|linuxserver/mods:papermerge-mod
+      - OCRLANG=fra
+    volumes:
+      - /apps/papermerge/config:/config
+      - /media/share/papermerge:/data
+    ports:
+      - 8000:8000
+    restart: unless-stopped
