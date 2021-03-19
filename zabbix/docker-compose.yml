@@ -1,23 +1,23 @@
-# Variables d'environnement à déclarer :
-#     - SERVICE : nom du service (exemple : plex)
-#     - DATA_LOCATION : localisation des données (exemple /apps/"service")
-#     - NDD : lien du nom de domaine (exemple : papamica.fr)
-#     - DB_USER : nom d'utilisateur pour la base de données (exemple : papamica)
+# Variables à déclarer :
+#     - SERVICE : nom du service
+#     - DATA_LOCATION : localisation des données
+#     - NDD : lien du nom de domaine
+#     - DB_USER : nom d'utilisateur pour la base de données
 #     - DB_PASSWORD : mot de passe pour la base de données
 
-# Fonctionne avec Portainer
+
 version: "2"
 services:
   # Base de données
-  postgres-server:    # The Postgres Database Service
+  postgres-server:  
     image: postgres:13.2
     restart: always
     container_name: $SERVICE-db
-    environment:   # Username, password and database name variables
+    environment:  
       POSTGRES_USER: $DB_USER
       POSTGRES_PASSWORD: $DB_PASSWORD
       POSTGRES_DB: zabbix
-      PG_DATA: /var/lib/postgresql/data/pgdata #data storage
+      PG_DATA: /var/lib/postgresql/data/pgdata
     volumes:
       - $DATA_LOCATION/db:/var/lib/postgresql/data
 
@@ -25,15 +25,15 @@ services:
     networks:
       - proxy
  
-  zabbix-server:     # The main Zabbix Server Software Service
+  zabbix-server:  # Zabbix main component
     image: zabbix/zabbix-server-pgsql:ubuntu-5.2.5
     restart: always
     container_name: $SERVICE-server
-    environment:   # The Postgres database value variable
+    environment:   
       POSTGRES_USER: $DB_USER
       POSTGRES_PASSWORD: $DB_PASSWORD
       POSTGRES_DB: zabbix
-      ZBX_HISTORYSTORAGETYPES: log,text #Zabbix configuration variables
+      ZBX_HISTORYSTORAGETYPES: log,text 
       ZBX_DEBUGLEVEL: 1
       ZBX_HOUSEKEEPINGFREQUENCY: 1
       ZBX_MAXHOUSEKEEPERDELETE: 5000
@@ -46,22 +46,22 @@ services:
       - postgres-server
     ports:
       - 10051:10051
-    volumes:  # Volumes for scripts and related files you can add
+    volumes:  #Scripts
       - $DATA_LOCATION/alertscripts:/usr/lib/zabbix/alertscripts
 
     # Facultatif  
     networks:
       - proxy
 
-  zabbix-web:    # The main Zabbix web UI or interface
+  zabbix-web:    # Web UI
     image: zabbix/zabbix-web-nginx-pgsql:ubuntu-5.2.5
     restart: always
     container_name: $SERVICE-web
-    environment:  # Postgre database variables
+    environment: 
       POSTGRES_USER: $DB_USER
       POSTGRES_PASSWORD: $DB_PASSWORD
       POSTGRES_DB: zabbix
-      ZBX_SERVER_HOST: zabbix-server  # Zabbix related and Php variables
+      ZBX_SERVER_HOST: zabbix-server
       ZBX_POSTMAXSIZE: 64M
       PHP_TZ: "Europe/Paris"
       ZBX_MAXEXECUTIONTIME: 500
@@ -85,6 +85,7 @@ services:
       - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
       - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
       - "traefik.http.routers.$SERVICE-secure.tls=true"
+# Uncomment this if not using pre-existant certificate
 #      - "traefik.http.routers.$SERVICE-secure.tls.certresolver=http"
       - "traefik.http.services.$SERVICE-secure.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
