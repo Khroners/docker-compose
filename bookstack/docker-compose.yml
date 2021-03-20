@@ -1,0 +1,63 @@
+# Fonctionne avec Portainer
+version: "2"
+services:
+  # BookStack : https://www.bookstackapp.com/
+  bookstack:
+    image: linuxserver/bookstack
+    container_name: $SERVICE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - DB_HOST=bookstack_db
+      - DB_USER=$DB_USER
+      - DB_PASS=$DB_PASSWORD
+      - DB_DATABASE=bookstackapp
+      - APP_URL=https://$SERVICE.$NDD
+    volumes:
+      - $DATA_LOCATION/config:/config
+#    ports:
+#      - 6875:80
+    restart: unless-stopped
+    depends_on:
+      - bookstack_db
+
+    # Facultatif
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+
+  # Base de données
+  bookstack_db:
+    image: linuxserver/mariadb
+    container_name: bookstack_db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ROOT_PASSWORD=$DB_ROOT
+      - TZ=Europe/Paris
+      - MYSQL_DATABASE=bookstackapp
+      - MYSQL_USER=$DB_USER
+      - MYSQL_PASSWORD=$DB_PASSWORD
+    volumes:
+      - $DATA_LOCATION/db:/config
+    restart: unless-stopped
+
+    # Facultatif
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external:
+      name: proxy
