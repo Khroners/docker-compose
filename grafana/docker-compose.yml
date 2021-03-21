@@ -1,0 +1,49 @@
+# Variables d'environnement à déclarer :
+#     - SERVICE
+#     - DATA_LOCATION
+#     - NDD
+
+#touch $DATA_LOCATION/config/grafana.ini
+
+version: "3"
+services:
+  grafana-xxl: #grafana with plugins
+    image: monitoringartist/grafana-xxl:7.1
+    restart: always
+    container_name: $SERVICE
+    volumes: 
+      - $DATA_LOCATION/config:/etc/grafana
+      - $DATA_LOCATION/data:/var/lib/grafana
+    environment:
+#      - GF_PATHS_DATA=/config/data
+#      - GF_PATHS_LOGS=/config/logs
+#      - GF_PATHS_PLUGINS=/config/plugins
+#      - UPGRADEALL=false
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,alexanderzobnin-zabbix-app
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=alexanderzobnin-zabbix-datasource
+#    ports:
+#      - 3001:3000
+
+    # Facultatif  
+    networks:
+      - proxy
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.services.$SERVICE-secure.loadbalancer.server.port=3000"
+      
+networks:
+  proxy:
+    external:
+      name: proxy
