@@ -1,0 +1,32 @@
+version: "2"
+services:  
+  snapdrop:
+    image: jarylc/snapdrop
+#    ports:
+#        - "3000:3000"
+    volumes: # optional: only if not using Lighttpd proxy in container
+        - $DATA_LOCATION/:/home/node/client
+    environment:
+        - HTTP_PORT=8080
+        - PORT=3000
+        - SINGLE_ROOM=1
+        - STUN_SERVER=stun:stun.l.google.com:19302
+    restart: unless-stopped
+    # Facultatif  
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.services.$SERVICE-secure.loadbalancer.server.port=8080"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+networks:
+  proxy:
+    external:
+      name: proxy
