@@ -1,0 +1,66 @@
+version: "3.2"
+
+services:
+  email:
+    image: docker.io/mailserver/docker-mailserver:latest
+    container_name: mail   
+    ports:
+        - "25:25"
+        - "143:143"
+        - "587:587"
+        - "993:993"
+    volumes:
+        - /apps/docker-mailserver/maildata:/var/mail
+        - /apps/docker-mailserver/mailstate:/var/mail-state
+        - /apps/docker-mailserver/maillogs:/var/log/mail
+        - /apps/docker-mailserver/config/:/tmp/docker-mailserver/
+    environment:
+        - ENABLE_SPAMASSASSIN=1
+        - SPAMASSASSIN_SPAM_TO_INBOX=1
+        - ENABLE_CLAMAV=1
+        - ENABLE_FAIL2BAN=1
+        - ENABLE_POSTGREY=1
+        - ENABLE_SASLAUTHD=0
+        - ONE_DIR=1
+        - DMS_DEBUG=0
+        - OVERRIDE_HOSTNAME=email.khroners.fr
+        - OVERRIDE_DOMAINNAME=email.khroners.fr
+        - POSTMASTER_ADDRESS=admin@khroners.fr
+        - PERMIT_DOCKER=network
+        - SSL_TYPE=letsencrypt
+    cap_add:
+        - NET_ADMIN
+        - SYS_PTRACE
+    restart: always
+    # Facultatif  
+    networks:
+      - proxy
+ 
+  rainloop:
+    image: hardware/rainloop
+    restart: always
+    container_name: $SERVICE-webmail
+    volumes: 
+      - /apps/rainloop:/rainloop/data
+    # Facultatif  
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+#      - "traefik.http.routers.$SERVICE-secure.tls.certresolver=http"
+#      - "traefik.http.services.$SERVICE-secure.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+      
+networks:
+  proxy:
+    external:
+      name: proxy
