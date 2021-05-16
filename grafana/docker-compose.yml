@@ -5,7 +5,7 @@
 
 #touch $DATA_LOCATION/config/grafana.ini
 
-version: "3"
+version: "3.8"
 services:
   grafana-xxl: #grafana with plugins
     image: monitoringartist/grafana-xxl:7.1
