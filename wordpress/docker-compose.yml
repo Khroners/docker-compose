@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+   # Base de données
+   wordpress-db:
+     container_name: $SERVICE-db
+     image: mysql:5.7.34
+     volumes:
+       - $DATA_LOCATION/db:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: $DB_ROOT
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: $DB_USER
+       MYSQL_PASSWORD: $DB_PASSWORD
+
+     #Facultatif  
+     networks:
+       - proxy
+
+   wordpress:
+     container_name: $SERVICE
+     depends_on:
+       - wordpress-db
+     image: wordpress:php7.4
+     restart: always
+     volumes:
+       - $DATA_LOCATION/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+       - $DATA_LOCATION/html:/var/www/html
+     environment:
+       WORDPRESS_DB_HOST: wordpress-db:3306
+       WORDPRESS_DB_USER: $DB_USER
+       WORDPRESS_DB_PASSWORD: $DB_PASSWORD
+       WORDPRESS_DB_NAME: wordpress
+#     ports:
+#      - 8082:8082
+
+     # Facultatif
+     networks:
+       - proxy
+
+     labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers-wp@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers-wp@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+ 
+networks:
+  proxy:
+    external:
+      name: proxy
