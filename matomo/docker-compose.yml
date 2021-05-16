@@ -1,0 +1,61 @@
+version: "3"
+services:
+  # Base de données
+  matomo-db:
+    image: linuxserver/mariadb
+    container_name: matomo-db
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MYSQL_ROOT_PASSWORD=DxLLH!AtCUbu4WSxh!gGsDQf
+      - TZ=Europe/Paris
+      - MYSQL_DATABASE=matomo
+      - MYSQL_USER=matomo
+      - MYSQL_PASSWORD=3xc9bWEZ3vVSRnYL48T7dC
+      # Flag necessary for the database max allowed packet check
+      # https://matomo.org/faq/troubleshooting/faq_183/
+      - MARIADB_EXTRA_FLAGS=--max_allowed_packet=64MB
+    volumes:
+      - /apps/matomo/db:/config
+
+    # Facultatif
+    networks:
+      - proxy
+
+  # Matomo : https://fr.matomo.org
+  matomo:
+    image: matomo
+    container_name: matomo
+    restart: unless-stopped
+    environment:
+      - MATOMO_DATABASE_HOST=matomo-db
+      - MATOMO_DATABASE_DBNAME=matomo
+      - MATOMO_DATABASE_USERNAME=matomo
+      - MATOMO_DATABASE_PASSWORD=Matomo65468431
+    volumes:
+      - /apps/matomo/data:/var/www/html/matomo
+    depends_on:
+      - matomo-db
+    # Facultatif avec Traefik
+    #Ports:
+    #  - 80:80
+    # Facultatif
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      #- "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+networks:
+  proxy:
+    external:
+      name: proxy
