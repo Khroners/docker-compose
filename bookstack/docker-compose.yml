@@ -39,7 +39,7 @@ services:
 
   # Base de données
   bookstack_db:
-    image: ghcr.io/linuxserver/mariadb:110.4.19mariabionic-ls21
+    image: ghcr.io/linuxserver/mariadb:110.4.19mariabionic
     container_name: bookstack_db
     environment:
       - PUID=1000
