@@ -1,5 +1,5 @@
 # Fonctionne avec Portainer
-version: "2"
+version: "3.8"
 services:
   # BookStack : https://www.bookstackapp.com/
   bookstack:
