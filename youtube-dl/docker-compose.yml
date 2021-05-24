@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+   yt:
+    image: tzahi12345/youtubedl-material:nightly
+    container_name: $SERVICE
+    environment: 
+      ALLOW_CONFIG_MUTATIONS: 'true'
+    restart: unless-stopped
+    volumes:
+         - $DATA_LOCATION/appdata:/app/appdata
+         - $DATA_LOCATION/audio:/app/audio
+         - $DATA_LOCATION/video:/app/video
+         - $DATA_LOCATION/subscriptions:/app/subscriptions
+         - $DATA_LOCATION/users:/app/users
+#    ports:
+#       - "8998:17442"  
+    networks:
+     - proxy
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.middlewares=hsts-headers@file"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.docker.network=proxy"
+      
+networks:
+  proxy:
+    external:
+      name: proxy
