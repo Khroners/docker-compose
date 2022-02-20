@@ -1,0 +1,53 @@
+```yml
+version: "3.9"
+services:
+  pihole:
+    image: cbcrowe/pihole-unbound:2022.02.1
+    container_name: pihole
+    domainname: $SERVICE.$NDD
+    environment:
+      - TZ=Europe/Paris
+      - WEBPASSWORD=xxxxxxxxxxxxx
+      - REV_SERVER=true
+      - REV_SERVER_DOMAIN=home
+      - REV_SERVER_TARGET=192.168.199.1
+      - REV_SERVER_CIDR=192.168.199.0/24
+      - HOSTNAME=pihole
+      - DOMAIN_NAME=pihole.home.khroners.fr
+    volumes:
+      - $DATA_LOCATION/config:/etc/pihole/
+      - $DATA_LOCATION/dnsmasq:/etc/dnsmasq.d/
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # web interface
+      - "traefik.http.routers.$SERVICE.entrypoints=http"
+      - "traefik.http.routers.$SERVICE.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.middlewares.$SERVICE-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.$SERVICE.middlewares=$SERVICE-https-redirect"
+      - "traefik.http.routers.$SERVICE-secure.entrypoints=https"
+      - "traefik.http.routers.$SERVICE-secure.rule=Host(`$SERVICE.$NDD`)"
+      - "traefik.http.routers.$SERVICE-secure.tls=true"
+      - "traefik.http.routers.$SERVICE-secure.service=pihole-web"
+      - "traefik.http.services.pihole-web.loadbalancer.server.port=80"
+      # DNS-over-TLS (853 Traefik -> 53 Pi-hole)
+      - "traefik.tcp.routers.pihole-dot.rule=HostSNI(`$SERVICE.$NDD`)"
+      - "traefik.tcp.routers.pihole-dot.entrypoints=dot"
+      - "traefik.tcp.routers.pihole-dot.service=pihole"
+      - "traefik.tcp.services.$SERVICE.loadbalancer.server.port=53"
+      # Normal DNS coming in on 53 TCP, no TLS
+      - "traefik.tcp.routers.dns.rule=HostSNI(`$SERVICE.$NDD`)"
+      - "traefik.tcp.routers.dns.entrypoints=dns"
+      - "traefik.tcp.routers.dns.service=pihole-dns"
+      # Normal DNS coming in on 53 UDP
+      - "traefik.udp.routers.udpdns.entrypoints=udpdns"
+      - "traefik.udp.routers.udpdns.service=$SERVICE-udp"
+      - "traefik.udp.services.$SERVICE-udp.loadbalancer.server.port=53"
+networks:
+  proxy:
+    external:
+      name: proxy
+```
